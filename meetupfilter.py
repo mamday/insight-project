@@ -3,6 +3,7 @@ import nltk
 from nltk import *
 from sklearn.feature_extraction.text import CountVectorizer
 from gensim import corpora, models, similarities
+from sklearn import decomposition
 
 in_file = sys.argv[1]
 
@@ -32,12 +33,35 @@ def main():
       in_text = clean_text(cur_text)
       #print in_text
       evt_list.append(in_text)
+  if(sys.argv[2]=='lsa'):
+    LSAModels(evt_list)
+  elif(sys.argv[2]=='nmf'):
+    NMFModels(evt_list)
+  else:
+     pass
 
+def NMFModels(evt_list):
   vectorizer = CountVectorizer(analyzer = "word",   \
                              tokenizer = None,    \
                              preprocessor = None, \
                              stop_words = None,   \
                              max_features = 500) 
+  in_features = vectorizer.fit_transform(evt_list)
+  in_features = in_features.toarray()
+  vocab = vectorizer.get_feature_names()
+  vocab = numpy.array(vocab)
+  num_topics = 20
+  num_top_words = 20
+  clf = decomposition.NMF(n_components=num_topics, random_state=1)
+  doctopic = clf.fit_transform(in_features)
+  topic_words = []
+  for topic in clf.components_:
+        word_idx = numpy.argsort(topic)[::-1][0:num_top_words]
+        topic_words.append([vocab[i] for i in word_idx])
+  for t in range(len(topic_words)):
+        print("Topic {}: {}".format(t, ' '.join(topic_words[t][:15])))
+
+def LSAModels(evt_list):
   in_features = vectorizer.fit_transform(evt_list)
   in_features = in_features.toarray()
   vocab = vectorizer.get_feature_names()
@@ -60,5 +84,6 @@ def main():
   lda_out = lda_model.print_topics(-1)
   print 'LDA',lda_out
   lda_model.print_topics(-1) 
+
 if __name__=="__main__":
   main()
