@@ -4,34 +4,68 @@ import psycopg2
 import pandas as pd
 import sys
 
-dbname = 'meetup_db'
-username = 'mamday'
-pswd = 'gr8ndm8'
+def main():
+  dbname = 'meetup_db'
+  username = 'mamday'
+  pswd = 'gr8ndm8'
+  engine = init_db(username,pswd,dbname)
+  if(sys.argv[1]=='event'):
+    load_event_csv(engine)
+    test_evt_query(dbname,username,pswd)
+  if(sys.argv[1]=='group'):
+    load_group_csv(engine)
+    test_group_query(dbname,username,pswd)
+  if(sys.argv[1]=='none'):
+    pass
 
-engine = create_engine('postgresql://%s:%s@localhost/%s'%(username,pswd,dbname))
+def init_db(username,pswd,dbname):
+  engine = create_engine('postgresql://%s:%s@localhost/%s'%(username,pswd,dbname))
 
-if not database_exists(engine.url):
+  if not database_exists(engine.url):
     create_database(engine.url)
+  return engine 
 
-# load a database from CSV
-meetup_data = pd.DataFrame.from_csv('seattle_pandas.csv')
-meetup_data["fee"] = [float(i) for i in meetup_data['fee']]
-meetup_data["duration"] = [float(i) for i in meetup_data['duration']]
-meetup_data["lat"] = [float(i) for i in meetup_data['lat']]
-meetup_data["lon"] = [float(i) for i in meetup_data['lon']]
-meetup_data["group_url"] = [i[i.find('com/')+4:i.find('/events')] for i in meetup_data["evt_url"]]
-cnx = engine.raw_connection()
-meetup_data.to_sql('event_table', engine, if_exists='replace')
+def load_event_csv(engine):
+  # load a database from CSV
+  meetup_data = pd.DataFrame.from_csv(sys.argv[2])
+  meetup_data["fee"] = [float(i) for i in meetup_data['fee']]
+  meetup_data["duration"] = [float(i) for i in meetup_data['duration']]
+  meetup_data["lat"] = [float(i) for i in meetup_data['lat']]
+  meetup_data["lon"] = [float(i) for i in meetup_data['lon']]
+  meetup_data["group_url"] = [i[i.find('com/')+4:i.find('/events')] for i in meetup_data["evt_url"]]
+  cnx = engine.raw_connection()
+  meetup_data.to_sql('event_table', engine, if_exists='replace')
 
+def load_group_csv(engine):
+  meetup_data = pd.DataFrame.from_csv(sys.argv[2])
+  cnx = engine.raw_connection()
+  meetup_data.to_sql('group_table', engine, if_exists='replace')
+
+
+def test_evt_query(dbname,username,pswd):
 # connect:
-con = None
-con = psycopg2.connect(database = dbname, user = username, host='localhost', password=pswd)
-
+  con = None
+  con = psycopg2.connect(database = dbname, user = username, host='localhost', password=pswd)
 # query:
-sql_query = """
-SELECT * FROM event_table WHERE fee>0;
-"""
-fee_from_table = pd.read_sql_query(sql_query,con)
+  sql_query = """
+  SELECT * FROM event_table WHERE fee>0;
+  """
+  fee_from_table = pd.read_sql_query(sql_query,con)
 
-fee_from_table.head()
+  print fee_from_table[:10]
 
+def test_group_query(dbname,username,pswd):
+# connect:
+  con = None
+  con = psycopg2.connect(database = dbname, user = username, host='localhost', password=pswd)
+# query:
+  sql_query = """
+  SELECT * FROM group_table WHERE topic='tech';
+  """
+  topic_from_table = pd.read_sql_query(sql_query,con)
+
+  print topic_from_table[:10]
+
+
+if __name__=="__main__":
+  main()
