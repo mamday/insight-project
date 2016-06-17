@@ -81,7 +81,7 @@ def meetup_output():
   user_minutes = int(user_time[3:])
   epoch_time = epoch_time+3600*hours+60*minutes
   user_epoch_time = user_epoch_time+3600*user_hours+60*user_minutes
-  times = [(i-user_epoch_time)/(3600*24) for i in epoch_time]
+  times = [(i-user_epoch_time) for i in epoch_time]
 
 #Distance
   db_latlons = zip(query_results["lat"],query_results["lon"])
@@ -89,7 +89,7 @@ def meetup_output():
 
 #Get times for walkable and bikeable distances
   walk_time_dist_url_list = [(i,j,k) for i,j,k in zip(times,distances,evt_urls) if j<1.7 and i>0]
-  bike_time_dist_url_list = [(i,j,k) for i,j,k in zip(times,distances,evt_urls) if j<5 and i>0]
+  bike_time_dist_url_list = [(i,j,k) for i,j,k in zip(times,distances,evt_urls) if j>1.7 and j<5 and i>0]
   walk_time_dist_url_list.sort()
   bike_time_dist_url_list.sort()
   if(len(walk_time_dist_url_list)==0 and len(bike_time_dist_url_list)==0):
@@ -97,7 +97,10 @@ def meetup_output():
   else:
     first_url=str(walk_time_dist_url_list[0][2]).strip()
     sec_url=str(bike_time_dist_url_list[0][2]).strip()
-
+    first_dist = walk_time_dist_url_list[0][1]
+    sec_dist = bike_time_dist_url_list[0][1]
+    first_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(walk_time_dist_url_list[0][0]+user_epoch_time))
+    sec_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(bike_time_dist_url_list[0][0]+user_epoch_time))
   #return render_template("output.html", times=times, distances = distances, the_result = the_result)
-  return render_template("output.html", first_url=first_url, sec_url=sec_url)
+  return render_template("output.html", first_url=first_url, sec_url=sec_url,first_dist=first_dist,sec_dist=sec_dist,first_time=first_time,sec_time=sec_time)
 
