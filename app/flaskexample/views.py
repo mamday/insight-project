@@ -60,12 +60,15 @@ def meetup_output():
   user_add = request.args.get('address')
   user_date = request.args.get('date')
   user_time = request.args.get('time')
+  user_cost = request.args.get('cost')
   in_loc = geolocator.geocode(user_add)
   in_latlon = (in_loc.latitude,in_loc.longitude)
 
-  evt_query = "SELECT * FROM event_table"
+  evt_query = "SELECT event_table.evt_url,event_table.fee,event_table.date,event_table.time,event_table.lat,event_table.lon,search_table.nerd_score FROM event_table,search_table WHERE event_table.evt_id=search_table.evt_id AND event_table.fee<%s AND search_table.nerd_score>0.02" % user_cost
 
   query_results=pd.read_sql_query(evt_query,con)
+#Event web sites
+  evt_urls = query_results['evt_url'] 
 
 #Date and time
   evt_time = [str(i).strip() for i in query_results['date']]
@@ -78,14 +81,23 @@ def meetup_output():
   user_minutes = int(user_time[3:])
   epoch_time = epoch_time+3600*hours+60*minutes
   user_epoch_time = user_epoch_time+3600*user_hours+60*user_minutes
-  times = [(i-user_epoch_time) for i in epoch_time if (i-user_epoch_time)>0][:10]
-  times.sort()
+  times = [(i-user_epoch_time)/(3600*24) for i in epoch_time]
 
 #Distance
-  db_latlons = [i for i in zip(query_results["lat"],query_results["lon"])][:10]
-  db_latlons.sort()
-  the_result=''
+  db_latlons = zip(query_results["lat"],query_results["lon"])
   distances = [vincenty(in_latlon,j).kilometers for j in db_latlons]
-  #the_result = ModelIt(stuff)
-  return render_template("output.html", times=times, distances = distances, the_result = the_result)
+
+#Get times for walkable and bikeable distances
+  walk_time_dist_url_list = [(i,j,k) for i,j,k in zip(times,distances,evt_urls) if j<1.7 and i>0]
+  bike_time_dist_url_list = [(i,j,k) for i,j,k in zip(times,distances,evt_urls) if j<5 and i>0]
+  walk_time_dist_url_list.sort()
+  bike_time_dist_url_list.sort()
+  if(len(walk_time_dist_url_list)==0 and len(bike_time_dist_url_list)==0):
+    the_result='No walkable or bikeable events near you' 
+  else:
+    first_url=str(walk_time_dist_url_list[0][2]).strip()
+    sec_url=str(bike_time_dist_url_list[0][2]).strip()
+
+  #return render_template("output.html", times=times, distances = distances, the_result = the_result)
+  return render_template("output.html", first_url=first_url, sec_url=sec_url)
 
