@@ -32,9 +32,11 @@ def index():
 #Filter words not in the corpus
 def score_from_words(names,model):
   nsim_topic = []
-  m_vocab = set(model.vocab)
-  m_vocab.remove('seattle')
+  m_vocab = [m.decode('utf-8') for m in model.vocab]
+  m_vocab = model.vocab
+  m_vocab = set(m_vocab)
   for top in names:
+    top = [t.decode('utf-8') for t in top]
     s_top = set(top)
     overlap = list(s_top & m_vocab)
     if(len(overlap)==0):
@@ -58,12 +60,12 @@ def meetup_input():
 def meetup_output():
   geolocator = Nominatim()
 
-  imdb_model = word2vec.Word2Vec.load('/home/mamday/insight-project/300features_40minwords_10context')
+  imdb_model = word2vec.Word2Vec.load('/home/mamday/insight-project/HN_300features_40minwords_10context')
   user_add = request.args.get('address')
   user_date = request.args.get('date')
   user_time = request.args.get('time')
   user_cost = request.args.get('cost')
-  in_loc = geolocator.geocode(user_add)
+  in_loc = geolocator.geocode(user_add,timeout=None)
   in_latlon = (in_loc.latitude,in_loc.longitude)
 
   evt_query = "SELECT * FROM event_table,group_table WHERE event_table.group_url=group_table.group_url AND event_table.fee<%s" % user_cost
@@ -105,25 +107,21 @@ def meetup_output():
   walkables = len(walk_time_dist_url_list)
   bikeables = len(bike_time_dist_url_list)
   the_result=''
-  if(walkables==0 and bikeables==0):
+  if(walkables==0 or bikeables==0):
     the_result='No walkable or bikeable events near you' 
   else:
 #Sort by nerdiness of event name
-    walk_time_dist_url_list.sort(key=lambda x: x[3],reverse=True)
-    bike_time_dist_url_list.sort(key=lambda x: x[3],reverse=True)
+    walk_time_dist_url_list.sort(key=lambda x: x[4],reverse=True)
+    bike_time_dist_url_list.sort(key=lambda x: x[4],reverse=True)
 #Keep top 10% most nerdy events, making sure to keep at least 1
     if(walkables>10):
       walk_time_dist_url_list = walk_time_dist_url_list[:(walkables/10)]
     if(bikeables>10):
       bike_time_dist_url_list = bike_time_dist_url_list[:(bikeables/10)]
 #Sort by nerdiness of group name
-    walk_time_dist_url_list.sort(key=lambda x: x[4],reverse=True)
-    bike_time_dist_url_list.sort(key=lambda x: x[4],reverse=True)
+    walk_time_dist_url_list.sort(key=lambda x: x[3],reverse=True)
+    bike_time_dist_url_list.sort(key=lambda x: x[3],reverse=True)
 
-#Sort by closest time to input time
-#    walk_time_dist_url_list.sort()
-#    bike_time_dist_url_list.sort()
-    
     first_url=str(walk_time_dist_url_list[0][2]).strip()
     sec_url=str(bike_time_dist_url_list[0][2]).strip()
     first_name=str(walk_time_dist_url_list[0][5]).rstrip()
