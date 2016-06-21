@@ -11,7 +11,7 @@ from gensim import corpora, models, similarities
 from gensim.models import word2vec
 import numpy
 import geopy
-import time
+import sys,time
 from geopy import *
 from geopy.distance import vincenty
 
@@ -101,8 +101,8 @@ def meetup_output():
   distances = [vincenty(in_latlon,j).kilometers for j in db_latlons]
 
 #Get times for walkable and bikeable distances on the input day
-  walk_time_dist_url_list = [(i,j,k,l,m,n) for i,j,k,l,m,n in zip(times,distances,evt_urls,nsim_els,nsim_gls,event_name) if j<1.7 and i>0 and (i+user_epoch_time)<(user_base_epoch_time+24*3600)]
-  bike_time_dist_url_list = [(i,j,k,l,m,n) for i,j,k,l,m,n in zip(times,distances,evt_urls,nsim_els,nsim_gls,event_name) if j>1.7 and j<5 and i>0 and (i+user_epoch_time)<(user_base_epoch_time+24*3600)]
+  walk_time_dist_url_list = [(i,j,k,l,m,n,o) for i,j,k,l,m,n,o in zip(times,distances,evt_urls,nsim_els,nsim_gls,event_name,db_latlons) if j<1.7 and i>0 and (i+user_epoch_time)<(user_base_epoch_time+24*3600)]
+  bike_time_dist_url_list = [(i,j,k,l,m,n,o) for i,j,k,l,m,n,o in zip(times,distances,evt_urls,nsim_els,nsim_gls,event_name,db_latlons) if j>1.7 and j<5 and i>0 and (i+user_epoch_time)<(user_base_epoch_time+24*3600)]
 #Get url, distance and time of soonest events
   walkables = len(walk_time_dist_url_list)
   bikeables = len(bike_time_dist_url_list)
@@ -133,7 +133,11 @@ def meetup_output():
     sec_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(bike_time_dist_url_list[0][0]+user_epoch_time))
 
   import folium
-  map_osm = folium.Map(location=[45.5236, -122.6750])
+ # map_osm = folium.Map(location=[walk_time_dist_url_list[0][6][0],walk_time_dist_url_list[0][6][1]], tiles='Mapbox',API_key=open('/home/mamday/insight-project/mapboxkey.txt').readlines()[0])
+  map_osm = folium.Map(location=[in_latlon[0],in_latlon[1]],zoom_start=12,width=500,height=500)
+  map_osm.simple_marker([in_latlon[0],in_latlon[1]], popup='Your Location',marker_color='red')
+  map_osm.simple_marker([walk_time_dist_url_list[0][6][0],walk_time_dist_url_list[0][6][1]], popup='Walking Distance')
+  map_osm.simple_marker([bike_time_dist_url_list[0][6][0],bike_time_dist_url_list[0][6][1]], popup='Biking Distance',marker_color='green')
   map_osm.create_map(path='flaskexample/templates/osm.html')
 
   if(the_result==''):
