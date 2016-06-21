@@ -138,6 +138,7 @@ def meetup_output():
   map_osm.simple_marker([in_latlon[0],in_latlon[1]], popup='Your Location',marker_color='red')
   map_osm.simple_marker([walk_time_dist_url_list[0][6][0],walk_time_dist_url_list[0][6][1]], popup='Walking Distance')
   map_osm.simple_marker([bike_time_dist_url_list[0][6][0],bike_time_dist_url_list[0][6][1]], popup='Biking Distance',marker_color='green')
+  folium.TileLayer('cartodbdark_matter').add_to(map_osm)
   map_osm.create_map(path='flaskexample/templates/osm.html')
 
   if(the_result==''):
