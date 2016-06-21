@@ -131,6 +131,11 @@ def meetup_output():
     sec_dist = bike_time_dist_url_list[0][1]
     first_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(walk_time_dist_url_list[0][0]+user_epoch_time))
     sec_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(bike_time_dist_url_list[0][0]+user_epoch_time))
+
+  import folium
+  map_osm = folium.Map(location=[45.5236, -122.6750])
+  map_osm.create_map(path='flaskexample/templates/osm.html')
+
   if(the_result==''):
     return render_template("output.html", first_name=first_name,sec_name=sec_name,first_url=first_url, sec_url=sec_url,first_dist=first_dist,sec_dist=sec_dist,first_time=first_time,sec_time=sec_time)
   else:
