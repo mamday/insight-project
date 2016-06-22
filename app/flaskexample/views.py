@@ -11,7 +11,7 @@ from gensim import corpora, models, similarities
 from gensim.models import word2vec
 import numpy
 import geopy
-import sys,time
+import random,sys,time
 from geopy import *
 from geopy.distance import vincenty
 
@@ -29,29 +29,6 @@ def index():
        title = 'Home', user = { 'nickname': 'Magnificent Melanie' },
        )
 
-#Filter words not in the corpus
-def score_from_words(names,model):
-  nsim_topic = []
-  m_vocab = [m.decode('utf-8') for m in model.vocab]
-  m_vocab = model.vocab
-  m_vocab = set(m_vocab)
-  for top in names:
-    top = [t.decode('utf-8') for t in top]
-    s_top = set(top)
-    overlap = list(s_top & m_vocab)
-    if(len(overlap)==0):
-        nsim=-2
-        nsim_topic.append(nsim)
-        continue
-    nsim = model.n_similarity(list(overlap),['nerd','geek','dork'])
-    nan_bool = numpy.isnan(nsim)
-    if(not(nan_bool)):
-        nsim_topic.append(nsim)
-    else:
-        nsim=2
-        nsim_topic.append(nsim)
-  return nsim_topic
-
 @app.route('/input')
 def meetup_input():
     return render_template("input.html")
@@ -60,7 +37,6 @@ def meetup_input():
 def meetup_output():
   geolocator = Nominatim()
 
-  imdb_model = word2vec.Word2Vec.load('/home/mamday/insight-project/HN_300features_40minwords_10context')
   user_add = request.args.get('address')
   user_date = request.args.get('date')
   user_time = request.args.get('time')
@@ -68,20 +44,16 @@ def meetup_output():
   in_loc = geolocator.geocode(user_add,timeout=None)
   in_latlon = (in_loc.latitude,in_loc.longitude)
 
-  evt_query = "SELECT * FROM event_table,group_table WHERE event_table.group_url=group_table.group_url AND event_table.fee<%s" % user_cost
+  evt_query = "SELECT * FROM event_table,newsearch_table WHERE event_table.evt_id=newsearch_table.evt_id AND event_table.fee<%s AND (newsearch_table.g_score>0.33 OR newsearch_table.e_score>0.29)" % user_cost
 
   query_results=pd.read_sql_query(evt_query,con)
 #Event web sites
   evt_urls = query_results['evt_url'] 
-
+  print len(evt_urls)
 #Event and group names
-  group_name = query_results['group_name']
   event_name = query_results['evt_name']
-  gnames =[re.sub("[^a-zA-Z]", " ", i).lower().split(' ') for i in group_name]
-  enames = [re.sub("[^a-zA-Z]", " ", i).lower().split(' ') for i in event_name]
-
-  nsim_els = score_from_words(enames,imdb_model)
-  nsim_gls = score_from_words(gnames,imdb_model)
+  nsim_els = query_results['e_score']
+  nsim_gls = query_results['g_score']
  
 #Date and time
   evt_time = [str(i).strip() for i in query_results['date']]
@@ -103,41 +75,60 @@ def meetup_output():
 #Get times for walkable and bikeable distances on the input day
   walk_time_dist_url_list = [(i,j,k,l,m,n,o) for i,j,k,l,m,n,o in zip(times,distances,evt_urls,nsim_els,nsim_gls,event_name,db_latlons) if j<1.7 and i>0 and (i+user_epoch_time)<(user_base_epoch_time+24*3600)]
   bike_time_dist_url_list = [(i,j,k,l,m,n,o) for i,j,k,l,m,n,o in zip(times,distances,evt_urls,nsim_els,nsim_gls,event_name,db_latlons) if j>1.7 and j<5 and i>0 and (i+user_epoch_time)<(user_base_epoch_time+24*3600)]
+
+#Map the events
+  import folium
+  map_osm = folium.Map(location=[in_latlon[0],in_latlon[1]],zoom_start=12,width=500,height=500)
+  map_osm.simple_marker([in_latlon[0],in_latlon[1]], popup='Your Location',marker_color='red')
+
 #Get url, distance and time of soonest events
   walkables = len(walk_time_dist_url_list)
   bikeables = len(bike_time_dist_url_list)
+  print 'Result:',walkables,bikeables 
   the_result=''
-  if(walkables==0 or bikeables==0):
+  if(walkables==0 and bikeables==0):
     the_result='No walkable or bikeable events near you' 
   else:
-#Sort by nerdiness of event name
-    walk_time_dist_url_list.sort(key=lambda x: x[4],reverse=True)
-    bike_time_dist_url_list.sort(key=lambda x: x[4],reverse=True)
-#Keep top 10% most nerdy events, making sure to keep at least 1
-    if(walkables>10):
-      walk_time_dist_url_list = walk_time_dist_url_list[:(walkables/10)]
-    if(bikeables>10):
-      bike_time_dist_url_list = bike_time_dist_url_list[:(bikeables/10)]
 #Sort by nerdiness of group name
-    walk_time_dist_url_list.sort(key=lambda x: x[3],reverse=True)
-    bike_time_dist_url_list.sort(key=lambda x: x[3],reverse=True)
+    #walk_time_dist_url_list.sort(key=lambda x: x[4],reverse=True)
+    #bike_time_dist_url_list.sort(key=lambda x: x[4],reverse=True)
+#Keep top 10% most nerdy events, making sure to keep at least 1
+    #if(walkables>10):
+    #  walk_time_dist_url_list = walk_time_dist_url_list[:(walkables/10)]
+    #if(bikeables>10):
+    #  bike_time_dist_url_list = bike_time_dist_url_list[:(bikeables/10)]
+#Sort by nerdiness of event name
+    #walk_time_dist_url_list.sort(key=lambda x: x[3],reverse=True)
+    #bike_time_dist_url_list.sort(key=lambda x: x[3],reverse=True)
+    if(walkables>0):
+      rand_walk = random.choice(walk_time_dist_url_list)
+      #map_osm.simple_marker([walk_time_dist_url_list[0][6][0],walk_time_dist_url_list[0][6][1]], popup='Walking Distance')
+      map_osm.simple_marker([rand_walk[6][0],rand_walk[6][1]], popup='Walking Distance')
+      first_url=str(rand_walk[2]).strip()
+      first_name=str(rand_walk[5]).rstrip()
+      first_name=first_name.decode('utf-8')
+      first_dist = '%.3f' % rand_walk[1] 
+      first_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(rand_walk[0]+user_epoch_time))
+    else:
+      first_url='www.meetup.com'
+      first_name='No events'
+      first_dist = '0' 
+      first_time = '24:00' 
 
-    first_url=str(walk_time_dist_url_list[0][2]).strip()
-    sec_url=str(bike_time_dist_url_list[0][2]).strip()
-    first_name=str(walk_time_dist_url_list[0][5]).rstrip()
-    sec_name=str(bike_time_dist_url_list[0][5]).rstrip()
-    first_dist = walk_time_dist_url_list[0][1]
-    first_dist = walk_time_dist_url_list[0][1]
-    sec_dist = bike_time_dist_url_list[0][1]
-    first_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(walk_time_dist_url_list[0][0]+user_epoch_time))
-    sec_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(bike_time_dist_url_list[0][0]+user_epoch_time))
+    if(bikeables>0):
+      rand_bike = random.choice(bike_time_dist_url_list)
+      map_osm.simple_marker([rand_bike[6][0],rand_bike[6][1]], popup='Biking Distance',marker_color='green')
+      sec_url=str(rand_bike[2]).strip()
+      sec_name=str(rand_bike[5]).rstrip()
+      sec_name=sec_name.decode('utf-8')
+      sec_dist = '%.3f' % rand_bike[1]
+      sec_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(rand_bike[0]+user_epoch_time))
+    else:
+      sec_url='www.meetup.com'
+      sec_name='No events'
+      sec_dist = '0' 
+      sec_time = '24:00' 
 
-  import folium
- # map_osm = folium.Map(location=[walk_time_dist_url_list[0][6][0],walk_time_dist_url_list[0][6][1]], tiles='Mapbox',API_key=open('/home/mamday/insight-project/mapboxkey.txt').readlines()[0])
-  map_osm = folium.Map(location=[in_latlon[0],in_latlon[1]],zoom_start=12,width=500,height=500)
-  map_osm.simple_marker([in_latlon[0],in_latlon[1]], popup='Your Location',marker_color='red')
-  map_osm.simple_marker([walk_time_dist_url_list[0][6][0],walk_time_dist_url_list[0][6][1]], popup='Walking Distance')
-  map_osm.simple_marker([bike_time_dist_url_list[0][6][0],bike_time_dist_url_list[0][6][1]], popup='Biking Distance',marker_color='green')
   folium.TileLayer('cartodbdark_matter').add_to(map_osm)
   map_osm.create_map(path='flaskexample/templates/osm.html')
 
