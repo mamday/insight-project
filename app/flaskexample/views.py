@@ -73,8 +73,8 @@ def meetup_output():
   distances = [vincenty(in_latlon,j).kilometers for j in db_latlons]
 
 #Get times for walkable and bikeable distances on the input day
-  walk_time_dist_url_list = [(i,j,k,l,m,n,o) for i,j,k,l,m,n,o in zip(times,distances,evt_urls,nsim_els,nsim_gls,event_name,db_latlons) if j<1.7 and i>0 and (i+user_epoch_time)<(user_base_epoch_time+24*3600)]
-  bike_time_dist_url_list = [(i,j,k,l,m,n,o) for i,j,k,l,m,n,o in zip(times,distances,evt_urls,nsim_els,nsim_gls,event_name,db_latlons) if j>1.7 and j<5 and i>0 and (i+user_epoch_time)<(user_base_epoch_time+24*3600)]
+  walk_time_dist_url_list = set([(i,j,k,l,m,n,o) for i,j,k,l,m,n,o in zip(times,distances,evt_urls,nsim_els,nsim_gls,event_name,db_latlons) if j<1.7 and i>0 and (i+user_epoch_time)<(user_base_epoch_time+24*3600)])
+  bike_time_dist_url_list = set([(i,j,k,l,m,n,o) for i,j,k,l,m,n,o in zip(times,distances,evt_urls,nsim_els,nsim_gls,event_name,db_latlons) if j>1.7 and j<5 and i>0 and (i+user_epoch_time)<(user_base_epoch_time+24*3600)])
 
 #Map the events
   import folium
@@ -100,15 +100,25 @@ def meetup_output():
 #Sort by nerdiness of event name
     #walk_time_dist_url_list.sort(key=lambda x: x[3],reverse=True)
     #bike_time_dist_url_list.sort(key=lambda x: x[3],reverse=True)
+    walk_urls = []
+    walk_names = []
+    walk_dists = []
+    walk_times = []
+
+    bike_urls = []
+    bike_names = []
+    bike_dists = []
+    bike_times = []
     if(walkables>0):
-      rand_walk = random.choice(walk_time_dist_url_list)
-      #map_osm.simple_marker([walk_time_dist_url_list[0][6][0],walk_time_dist_url_list[0][6][1]], popup='Walking Distance')
-      map_osm.simple_marker([rand_walk[6][0],rand_walk[6][1]], popup='Walking Distance')
-      first_url=str(rand_walk[2]).strip()
-      first_name=str(rand_walk[5]).rstrip()
-      first_name=first_name.decode('utf-8')
-      first_dist = '%.3f' % rand_walk[1] 
-      first_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(rand_walk[0]+user_epoch_time))
+      #rand_walk = random.choice(walk_time_dist_url_list)
+      for w in walk_time_dist_url_list:
+        print w
+        map_osm.simple_marker([w[6][0],w[6][1]], popup='Walking Distance')
+        walk_urls.append(str(w[2]).strip())
+        first_name=str(w[5]).rstrip()
+        walk_names.append(first_name.decode('utf-8'))
+        walk_dists.append('%.3f' % w[1]) 
+        walk_times.append(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(w[0]+user_epoch_time)))
     else:
       first_url='www.meetup.com'
       first_name='No events'
@@ -116,13 +126,16 @@ def meetup_output():
       first_time = '24:00' 
 
     if(bikeables>0):
-      rand_bike = random.choice(bike_time_dist_url_list)
-      map_osm.simple_marker([rand_bike[6][0],rand_bike[6][1]], popup='Biking Distance',marker_color='green')
-      sec_url=str(rand_bike[2]).strip()
-      sec_name=str(rand_bike[5]).rstrip()
-      sec_name=sec_name.decode('utf-8')
-      sec_dist = '%.3f' % rand_bike[1]
-      sec_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(rand_bike[0]+user_epoch_time))
+      #rand_bike = random.choice(bike_time_dist_url_list)
+      for b in bike_time_dist_url_list:
+        print b
+        map_osm.simple_marker([b[6][0],b[6][1]], popup='Biking Distance',marker_color='green')
+      #map_osm.simple_marker([rand_bike[6][0],rand_bike[6][1]], popup='Biking Distance',marker_color='green')
+        bike_urls.append(str(b[2]).strip())
+        sec_name = str(b[5]).rstrip()
+        bike_names.append(sec_name.decode('utf-8'))
+        bike_dists.append('%.3f' % b[1])
+        bike_times.append(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(b[0]+user_epoch_time)))
     else:
       sec_url='www.meetup.com'
       sec_name='No events'
@@ -133,7 +146,8 @@ def meetup_output():
   map_osm.create_map(path='flaskexample/templates/osm.html')
 
   if(the_result==''):
-    return render_template("output.html", first_name=first_name,sec_name=sec_name,first_url=first_url, sec_url=sec_url,first_dist=first_dist,sec_dist=sec_dist,first_time=first_time,sec_time=sec_time)
+    #return render_template("output.html", first_name=first_name,sec_name=sec_name,first_url=first_url, sec_url=sec_url,first_dist=first_dist,sec_dist=sec_dist,first_time=first_time,sec_time=sec_time)
+    return render_template("output.html", walkables=walkables,bikeables=bikeables,walk_urls=walk_urls,bike_urls=bike_urls,walk_names=walk_names,bike_names=bike_names,walk_dists=walk_dists,bike_dists=bike_dists,walk_times=walk_times,bike_times=bike_times)
   else:
 #TODO: Figure out how to return an error page
     return
