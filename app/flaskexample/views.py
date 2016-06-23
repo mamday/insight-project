@@ -44,7 +44,7 @@ def meetup_output():
   in_loc = geolocator.geocode(user_add,timeout=None)
   in_latlon = (in_loc.latitude,in_loc.longitude)
 
-  evt_query = "SELECT * FROM event_table,newsearch_table WHERE event_table.evt_id=newsearch_table.evt_id AND event_table.fee<%s AND (newsearch_table.g_score>0.33 OR newsearch_table.e_score>0.29)" % user_cost
+  evt_query = "SELECT * FROM event_table,newsearch_table WHERE event_table.evt_id=newsearch_table.evt_id AND event_table.fee<%s AND (newsearch_table.g_score>0 OR newsearch_table.e_score>0.0)" % user_cost
 
   query_results=pd.read_sql_query(evt_query,con)
 #Event web sites
@@ -75,6 +75,12 @@ def meetup_output():
 #Get times for walkable and bikeable distances on the input day
   walk_time_dist_url_list = set([(i,j,k,l,m,n,o) for i,j,k,l,m,n,o in zip(times,distances,evt_urls,nsim_els,nsim_gls,event_name,db_latlons) if j<1.7 and i>0 and (i+user_epoch_time)<(user_base_epoch_time+24*3600)])
   bike_time_dist_url_list = set([(i,j,k,l,m,n,o) for i,j,k,l,m,n,o in zip(times,distances,evt_urls,nsim_els,nsim_gls,event_name,db_latlons) if j>1.7 and j<5 and i>0 and (i+user_epoch_time)<(user_base_epoch_time+24*3600)])
+  walk_time_dist_url_list = list(walk_time_dist_url_list)
+  bike_time_dist_url_list = list(bike_time_dist_url_list)
+  walk_time_dist_url_list.sort(key=lambda x: x[3],reverse=True)
+  bike_time_dist_url_list.sort(key=lambda x: x[3],reverse=True)
+  walk_time_dist_url_list = walk_time_dist_url_list[:5]
+  bike_time_dist_url_list = bike_time_dist_url_list[:5]
 
 #Map the events
   import folium
@@ -98,8 +104,6 @@ def meetup_output():
     #if(bikeables>10):
     #  bike_time_dist_url_list = bike_time_dist_url_list[:(bikeables/10)]
 #Sort by nerdiness of event name
-    #walk_time_dist_url_list.sort(key=lambda x: x[3],reverse=True)
-    #bike_time_dist_url_list.sort(key=lambda x: x[3],reverse=True)
     walk_urls = []
     walk_names = []
     walk_dists = []
