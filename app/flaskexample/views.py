@@ -22,6 +22,18 @@ db = create_engine('postgres://%s%s/%s'%(user,host,dbname))
 con = None
 con = psycopg2.connect(database = dbname, user = user)
 
+def get_stars(score):
+  if(score<0.154):
+    return '1 Star'
+  elif(score>=0.154 and score<0.205):
+    return '2 Star'
+  elif(score>=0.205 and score<0.245):
+    return '3 Star'
+  elif(score>=0.245 and score<0.279):
+    return '4 Star'
+  elif(score>=0.279):
+    return '5 Star'
+
 @app.route('/')
 @app.route('/index')
 def index():
@@ -33,18 +45,19 @@ def index():
 def meetup_input():
     return render_template("input.html")
 
+
 @app.route('/output')
 def meetup_output():
   geolocator = Nominatim()
 
   user_add = request.args.get('address')
   user_date = request.args.get('date')
-  user_time = request.args.get('time')
+#  user_time = request.args.get('time')
   user_cost = request.args.get('cost')
   in_loc = geolocator.geocode(user_add,timeout=None)
   in_latlon = (in_loc.latitude,in_loc.longitude)
 
-  evt_query = "SELECT * FROM event_table,newsearch_table WHERE event_table.evt_id=newsearch_table.evt_id AND event_table.fee<%s AND (newsearch_table.g_score>0 OR newsearch_table.e_score>0.0)" % user_cost
+  evt_query = "SELECT * FROM event_table,newsearch_table WHERE event_table.evt_id=newsearch_table.evt_id AND event_table.fee<%s AND (newsearch_table.h_score>0 OR newsearch_table.e_score>0.0)" % user_cost
 
   query_results=pd.read_sql_query(evt_query,con)
 #Event web sites
@@ -62,10 +75,10 @@ def meetup_output():
   user_base_epoch_time = time.mktime(time.strptime(user_date, time_tostr)) 
   hours = numpy.array([int(i[1:3]) for i in query_results['time']])
   minutes = numpy.array([int(i[4:6]) for i in query_results['time']])
-  user_hours = int(user_time[:2])
-  user_minutes = int(user_time[3:])
+  #user_hours = int(user_time[:2])
+  #user_minutes = int(user_time[3:])
   epoch_time = epoch_time+3600*hours+60*minutes
-  user_epoch_time = user_base_epoch_time+3600*user_hours+60*user_minutes
+  user_epoch_time = user_base_epoch_time
   times = [(i-user_epoch_time) for i in epoch_time]
 
 #Distance
@@ -77,11 +90,17 @@ def meetup_output():
   bike_time_dist_url_list = set([(i,j,k,l,m,n,o) for i,j,k,l,m,n,o in zip(times,distances,evt_urls,nsim_els,nsim_gls,event_name,db_latlons) if j>1.7 and j<5 and i>0 and (i+user_epoch_time)<(user_base_epoch_time+24*3600)])
   walk_time_dist_url_list = list(walk_time_dist_url_list)
   bike_time_dist_url_list = list(bike_time_dist_url_list)
+  walk_time_dist_url_list.sort(key=lambda x: x[4],reverse=True)
+  bike_time_dist_url_list.sort(key=lambda x: x[4],reverse=True)
+#  walk_time_dist_url_list.sort(key=lambda x: x[3])
+#  bike_time_dist_url_list.sort(key=lambda x: x[3])
+  walk_time_dist_url_list = walk_time_dist_url_list[:10]
+  bike_time_dist_url_list = bike_time_dist_url_list[:10]
+  print 'Groups',len(walk_time_dist_url_list),len(bike_time_dist_url_list)
   walk_time_dist_url_list.sort(key=lambda x: x[3],reverse=True)
   bike_time_dist_url_list.sort(key=lambda x: x[3],reverse=True)
   walk_time_dist_url_list = walk_time_dist_url_list[:5]
   bike_time_dist_url_list = bike_time_dist_url_list[:5]
-
 #Map the events
   import folium
   map_osm = folium.Map(location=[in_latlon[0],in_latlon[1]],zoom_start=12,width=500,height=500)
@@ -108,20 +127,24 @@ def meetup_output():
     walk_names = []
     walk_dists = []
     walk_times = []
+    walk_stars = []
 
     bike_urls = []
     bike_names = []
     bike_dists = []
     bike_times = []
+    bike_stars = []
     if(walkables>0):
       #rand_walk = random.choice(walk_time_dist_url_list)
       for w in walk_time_dist_url_list:
-        print w
-        map_osm.simple_marker([w[6][0],w[6][1]], popup='Walking Distance')
+        print 'Walk',w[3]
+        #print w
+        walk_stars.append(get_stars(w[3]))
         walk_urls.append(str(w[2]).strip())
         first_name=str(w[5]).rstrip()
         walk_names.append(first_name.decode('utf-8'))
-        walk_dists.append('%.3f' % w[1]) 
+        map_osm.simple_marker([w[6][0],w[6][1]], popup=first_name.decode('utf-8'))
+        walk_dists.append('%.2f' % w[1]) 
         walk_times.append(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(w[0]+user_epoch_time)))
     else:
       first_url='www.meetup.com'
@@ -132,13 +155,15 @@ def meetup_output():
     if(bikeables>0):
       #rand_bike = random.choice(bike_time_dist_url_list)
       for b in bike_time_dist_url_list:
-        print b
-        map_osm.simple_marker([b[6][0],b[6][1]], popup='Biking Distance',marker_color='green')
+        print 'Bike',b[3]
+        bike_stars.append(get_stars(b[3]))
+        #print b
       #map_osm.simple_marker([rand_bike[6][0],rand_bike[6][1]], popup='Biking Distance',marker_color='green')
         bike_urls.append(str(b[2]).strip())
         sec_name = str(b[5]).rstrip()
         bike_names.append(sec_name.decode('utf-8'))
-        bike_dists.append('%.3f' % b[1])
+        map_osm.simple_marker([b[6][0],b[6][1]], popup=sec_name.decode('utf-8'),marker_color='green')
+        bike_dists.append('%.2f' % b[1])
         bike_times.append(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(b[0]+user_epoch_time)))
     else:
       sec_url='www.meetup.com'
@@ -151,7 +176,7 @@ def meetup_output():
 
   if(the_result==''):
     #return render_template("output.html", first_name=first_name,sec_name=sec_name,first_url=first_url, sec_url=sec_url,first_dist=first_dist,sec_dist=sec_dist,first_time=first_time,sec_time=sec_time)
-    return render_template("output.html", walkables=walkables,bikeables=bikeables,walk_urls=walk_urls,bike_urls=bike_urls,walk_names=walk_names,bike_names=bike_names,walk_dists=walk_dists,bike_dists=bike_dists,walk_times=walk_times,bike_times=bike_times)
+    return render_template("output.html", walk_stars=walk_stars,bike_stars=bike_stars, walkables=walkables,bikeables=bikeables,walk_urls=walk_urls,bike_urls=bike_urls,walk_names=walk_names,bike_names=bike_names,walk_dists=walk_dists,bike_dists=bike_dists,walk_times=walk_times,bike_times=bike_times)
   else:
 #TODO: Figure out how to return an error page
     return

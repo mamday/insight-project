@@ -70,10 +70,10 @@
           <label for="date">Date (YYYY-MM-DD):</label>
           <input type="text" id="date" name='date' placeholder="e.g. ">
         </div>
-        <div class="form-group">
+        <!--<div class="form-group">
           <label for="time">Time (HH:MM):</label>
           <input type="text" id="time" name='time' placeholder="e.g. ">
-        </div>
+        </div>-->
         <div class="form-group">
           <label for="cost">Cost (Less than X dollars):</label>
           <input type="text" id="cost" name='cost' placeholder="e.g. ">
@@ -96,14 +96,14 @@
         <h3>Walkable</h3>
        {% for evt in range(walkables) %}
         <a href={{walk_urls[evt]}}>
-        <h3>{{walk_names[evt]}}, at {{walk_times[evt]}} within {{walk_dists[evt]}} kilometers</h3>
+        <h3>{{walk_stars[evt]}} - {{walk_names[evt]}}, at {{walk_times[evt]}} within {{walk_dists[evt]}} kilometers</h3>
         </a>
        <!--  <p class="lead"> {{first_name}}, at {{first_time}} within {{first_dist}} kilometers</p> -->
        {% endfor %}
         <h3>Bikeable</h3>
        {% for evt in range(bikeables) %}
         <a href={{bike_urls[evt]}}>
-        <h3>{{bike_names[evt]}}, at {{bike_times[evt]}} within {{bike_dists[evt]}} kilometers</h3>
+        <h3>{{bike_stars[evt]}} - {{bike_names[evt]}}, at {{bike_times[evt]}} within {{bike_dists[evt]}} kilometers</h3>
         </a>
        {% endfor %}
         <!-- <p class="lead"> {{sec_name}}, at {{sec_time}} within {{sec_dist}} kilometers</p> -->
