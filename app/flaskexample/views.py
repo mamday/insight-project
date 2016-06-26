@@ -23,15 +23,15 @@ con = None
 con = psycopg2.connect(database = dbname, user = user)
 
 def get_stars(score):
-  if(score<0.154):
+  if(score<0.165):
     return '1 Star'
-  elif(score>=0.154 and score<0.205):
+  elif(score>=0.165 and score<0.221):
     return '2 Star'
-  elif(score>=0.205 and score<0.245):
+  elif(score>=0.221 and score<0.277):
     return '3 Star'
-  elif(score>=0.245 and score<0.279):
+  elif(score>=0.277 and score<0.329):
     return '4 Star'
-  elif(score>=0.279):
+  elif(score>=0.329):
     return '5 Star'
 
 @app.route('/')
@@ -57,7 +57,7 @@ def meetup_output():
   in_loc = geolocator.geocode(user_add,timeout=None)
   in_latlon = (in_loc.latitude,in_loc.longitude)
 
-  evt_query = "SELECT * FROM event_table,newsearch_table WHERE event_table.evt_id=newsearch_table.evt_id AND event_table.fee<%s AND (newsearch_table.h_score>0 OR newsearch_table.e_score>0.0)" % user_cost
+  evt_query = "SELECT * FROM event_table,newsearch_table WHERE event_table.evt_id=newsearch_table.evt_id AND event_table.fee<%s AND newsearch_table.e_score>0" % user_cost
 
   query_results=pd.read_sql_query(evt_query,con)
 #Event web sites
