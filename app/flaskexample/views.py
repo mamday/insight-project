@@ -104,7 +104,9 @@ def meetup_output():
 #Map the events
   import branca,folium
   map_osm = folium.Map(location=[in_latlon[0],in_latlon[1]],zoom_start=12,width=500,height=500)
-  map_osm.simple_marker([in_latlon[0],in_latlon[1]], popup='Your Location',marker_color='red')
+  #map_osm.simple_marker([in_latlon[0],in_latlon[1]], popup='Your Location',marker_color='red')
+  icon = folium.Icon(color='red',icon='home',prefix='fa')
+  folium.Marker([in_latlon[0],in_latlon[1]], icon=icon).add_to(map_osm)
 
 #Get url, distance and time of soonest events
   walkables = len(walk_time_dist_url_list)
@@ -152,9 +154,9 @@ def meetup_output():
         cur_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(w[0]+user_epoch_time))
 
         marker_html="""<p>"""+cur_stars+"""-</p>"""+"""<a href=""" + cur_url+""">"""+cur_name+"""</a><p>at """ +cur_time+ """, within """ +cur_dist+""" kilometers.</p>""" 
-        icon = folium.Icon(color='blue')
         iframe = branca.element.IFrame(html=marker_html, width=300, height=50)
         popup = folium.Popup(iframe)
+        icon = folium.Icon(color='blue',icon='blind',prefix='fa')
         folium.Marker([w[6][0],w[6][1]], popup=popup,icon=icon).add_to(map_osm)
     else:
       first_url='www.meetup.com'
@@ -182,7 +184,7 @@ def meetup_output():
         #marker_html="""
         #<a href=""" + cur_url+""">"""+cur_name+"""</a><p>at """ +cur_time+ """, within """ +cur_dist+""" kilometers.</p>
         #""" 
-        icon = folium.Icon(color='green')
+        icon = folium.Icon(color='green',icon='bicycle',prefix='fa')
         iframe = branca.element.IFrame(html=marker_html, width=300, height=50)
         popup = folium.Popup(iframe)
         folium.Marker([b[6][0],b[6][1]], popup=popup,icon=icon).add_to(map_osm)
