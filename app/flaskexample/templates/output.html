@@ -101,22 +101,6 @@
      </div><!-- /.container -->
 
     <div class="container">
-      <div class="starter-template">
-        <h3>Walkable</h3>
-       {% for evt in range(walkables) %}
-        <a href={{walk_urls[evt]}}>
-        <h3>{{walk_stars[evt]}} - {{walk_names[evt]}}, at {{walk_times[evt]}} within {{walk_dists[evt]}} kilometers</h3>
-        </a>
-       <!--  <p class="lead"> {{first_name}}, at {{first_time}} within {{first_dist}} kilometers</p> -->
-       {% endfor %}
-        <h3>Bikeable</h3>
-       {% for evt in range(bikeables) %}
-        <a href={{bike_urls[evt]}}>
-        <h3>{{bike_stars[evt]}} - {{bike_names[evt]}}, at {{bike_times[evt]}} within {{bike_dists[evt]}} kilometers</h3>
-        </a>
-       {% endfor %}
-        <!-- <p class="lead"> {{sec_name}}, at {{sec_time}} within {{sec_dist}} kilometers</p> -->
-      </div>
 
 
       <script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>

@@ -102,7 +102,7 @@ def meetup_output():
   walk_time_dist_url_list = walk_time_dist_url_list[:5]
   bike_time_dist_url_list = bike_time_dist_url_list[:5]
 #Map the events
-  import folium
+  import branca,folium
   map_osm = folium.Map(location=[in_latlon[0],in_latlon[1]],zoom_start=12,width=500,height=500)
   map_osm.simple_marker([in_latlon[0],in_latlon[1]], popup='Your Location',marker_color='red')
 
@@ -139,13 +139,23 @@ def meetup_output():
       for w in walk_time_dist_url_list:
         print 'Walk',w[3]
         #print w
+        cur_stars = get_stars(w[3])
         walk_stars.append(get_stars(w[3]))
         walk_urls.append(str(w[2]).strip())
+        cur_url=str(w[2]).strip()
         first_name=str(w[5]).rstrip()
+        cur_name=first_name.decode('utf-8')
         walk_names.append(first_name.decode('utf-8'))
-        map_osm.simple_marker([w[6][0],w[6][1]], popup=first_name.decode('utf-8'))
         walk_dists.append('%.2f' % w[1]) 
+        cur_dist='%.2f' % w[1]
         walk_times.append(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(w[0]+user_epoch_time)))
+        cur_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(w[0]+user_epoch_time))
+
+        marker_html="""<p>"""+cur_stars+"""-</p>"""+"""<a href=""" + cur_url+""">"""+cur_name+"""</a><p>at """ +cur_time+ """, within """ +cur_dist+""" kilometers.</p>""" 
+        icon = folium.Icon(color='blue')
+        iframe = branca.element.IFrame(html=marker_html, width=300, height=50)
+        popup = folium.Popup(iframe)
+        folium.Marker([w[6][0],w[6][1]], popup=popup,icon=icon).add_to(map_osm)
     else:
       first_url='www.meetup.com'
       first_name='No events'
@@ -156,15 +166,26 @@ def meetup_output():
       #rand_bike = random.choice(bike_time_dist_url_list)
       for b in bike_time_dist_url_list:
         print 'Bike',b[3]
+        cur_stars = get_stars(b[3])
         bike_stars.append(get_stars(b[3]))
-        #print b
-      #map_osm.simple_marker([rand_bike[6][0],rand_bike[6][1]], popup='Biking Distance',marker_color='green')
+        cur_url = str(b[2]).strip()
         bike_urls.append(str(b[2]).strip())
         sec_name = str(b[5]).rstrip()
+        cur_name=sec_name.decode('utf-8')
         bike_names.append(sec_name.decode('utf-8'))
-        map_osm.simple_marker([b[6][0],b[6][1]], popup=sec_name.decode('utf-8'),marker_color='green')
+        cur_dist='%.2f' % b[1]
         bike_dists.append('%.2f' % b[1])
-        bike_times.append(time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(b[0]+user_epoch_time)))
+        cur_time=time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(b[0]+user_epoch_time))
+        bike_times.append(time.strftime('%Y-%m-%d, %H:%M:%S', time.localtime(b[0]+user_epoch_time)))
+
+        marker_html="""<p>"""+cur_stars+"""-</p>"""+"""<a href=""" + cur_url+""">"""+cur_name+"""</a><p>at """ +cur_time+ """, within """ +cur_dist+""" kilometers.</p>""" 
+        #marker_html="""
+        #<a href=""" + cur_url+""">"""+cur_name+"""</a><p>at """ +cur_time+ """, within """ +cur_dist+""" kilometers.</p>
+        #""" 
+        icon = folium.Icon(color='green')
+        iframe = branca.element.IFrame(html=marker_html, width=300, height=50)
+        popup = folium.Popup(iframe)
+        folium.Marker([b[6][0],b[6][1]], popup=popup,icon=icon).add_to(map_osm)
     else:
       sec_url='www.meetup.com'
       sec_name='No events'
