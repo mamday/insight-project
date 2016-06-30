@@ -1,14 +1,11 @@
 from flaskexample import app
 from flask import render_template
 from flask import request
-from a_Model import ModelIt
 from sqlalchemy import create_engine
 from sqlalchemy_utils import database_exists, create_database
 import pandas as pd
 import psycopg2
 import re
-from gensim import corpora, models, similarities
-from gensim.models import word2vec
 import numpy
 import geopy
 import random,sys,time
@@ -16,7 +13,8 @@ from geopy import *
 from geopy.distance import vincenty
 
 user = 'mamday' #add your username here (same as previous postgreSQL)                      
-host = 'localhost'
+#host = 'localhost'
+host = '127.0.0.1'
 dbname = 'meetup_db'
 db = create_engine('postgres://%s%s/%s'%(user,host,dbname))
 con = None
@@ -36,7 +34,7 @@ def get_stars(score):
 
 @app.route('/')
 @app.route('/index')
-def index():
+def run():
     return render_template("index.html",
        title = 'Home', user = { 'nickname': 'Magnificent Melanie' },
        )
@@ -195,11 +193,12 @@ def meetup_output():
       sec_time = '24:00' 
 
   folium.TileLayer('cartodbdark_matter').add_to(map_osm)
-  #map_osm.create_map(path='flaskexample/templates/osm.html')
+  tmp_rand = random.choice(xrange(1,99999))
+  map_osm.create_map(path='flaskexample/templates/osm-%d.html' % (tmp_rand))
 
   if(the_result==''):
     #return render_template("output.html", first_name=first_name,sec_name=sec_name,first_url=first_url, sec_url=sec_url,first_dist=first_dist,sec_dist=sec_dist,first_time=first_time,sec_time=sec_time)
-    return render_template("output.html", walk_stars=walk_stars,bike_stars=bike_stars, walkables=walkables,bikeables=bikeables,walk_urls=walk_urls,bike_urls=bike_urls,walk_names=walk_names,bike_names=bike_names,walk_dists=walk_dists,bike_dists=bike_dists,walk_times=walk_times,bike_times=bike_times)
+    return render_template("output.html", tmp_rand=tmp_rand, walk_stars=walk_stars,bike_stars=bike_stars, walkables=walkables,bikeables=bikeables,walk_urls=walk_urls,bike_urls=bike_urls,walk_names=walk_names,bike_names=bike_names,walk_dists=walk_dists,bike_dists=bike_dists,walk_times=walk_times,bike_times=bike_times)
   else:
 #TODO: Figure out how to return an error page
     return
