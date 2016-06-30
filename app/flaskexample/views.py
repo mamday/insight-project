@@ -195,7 +195,7 @@ def meetup_output():
       sec_time = '24:00' 
 
   folium.TileLayer('cartodbdark_matter').add_to(map_osm)
-  #map_osm.create_map(path='flaskexample/templates/osm.html')
+  map_osm.create_map(path='flaskexample/templates/osm.html')
 
   if(the_result==''):
     #return render_template("output.html", first_name=first_name,sec_name=sec_name,first_url=first_url, sec_url=sec_url,first_dist=first_dist,sec_dist=sec_dist,first_time=first_time,sec_time=sec_time)
