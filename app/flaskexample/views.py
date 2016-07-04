@@ -36,8 +36,12 @@ def get_stars(score):
 @app.route('/index')
 def run():
     return render_template("index.html",
-       title = 'Home', user = { 'nickname': 'Magnificent Melanie' },
        )
+
+#@app.route('/about')
+#def run():
+#    return render_template("about.html",
+#       )
 
 @app.route('/input')
 def meetup_input():
