@@ -56,11 +56,19 @@ def meetup_output():
   user_date = request.args.get('date')
 #  user_time = request.args.get('time')
   user_cost = request.args.get('cost')
-  in_loc = geolocator.geocode(user_add,timeout=None)
-  in_latlon = (in_loc.latitude,in_loc.longitude)
-
-  evt_query = "SELECT * FROM event_table,newsearch_table WHERE event_table.evt_id=newsearch_table.evt_id AND event_table.fee<%s AND newsearch_table.e_score>0" % user_cost
-
+  the_result=''
+  try:
+    in_loc = geolocator.geocode(user_add,timeout=None)
+    in_latlon = (in_loc.latitude,in_loc.longitude)
+  except:
+    the_result = 'Your address is invalid'
+    return render_template("nooutput.html",the_result=the_result)
+  try:
+    float(user_cost)
+    evt_query = "SELECT * FROM event_table,newsearch_table WHERE event_table.evt_id=newsearch_table.evt_id AND event_table.fee<=%s AND newsearch_table.e_score>0" % user_cost
+  except:
+    the_result='Cost input is invalid'
+    return render_template("nooutput.html",the_result=the_result)
   query_results=pd.read_sql_query(evt_query,con)
 #Event web sites
   evt_urls = query_results['evt_url'] 
@@ -74,7 +82,12 @@ def meetup_output():
   evt_time = [str(i).strip() for i in query_results['date']]
   time_tostr = '%Y-%m-%d'
   epoch_time = numpy.array([time.mktime(time.strptime(i, time_tostr)) for i in evt_time])
-  user_base_epoch_time = time.mktime(time.strptime(user_date, time_tostr)) 
+  user_base_epoch_time = -1
+  try:
+    user_base_epoch_time = time.mktime(time.strptime(user_date, time_tostr)) 
+  except: 
+    the_result='Date input is invalid'
+    return render_template("nooutput.html",the_result=the_result)
   hours = numpy.array([int(i[1:3]) for i in query_results['time']])
   minutes = numpy.array([int(i[4:6]) for i in query_results['time']])
   #user_hours = int(user_time[:2])
@@ -114,9 +127,9 @@ def meetup_output():
   walkables = len(walk_time_dist_url_list)
   bikeables = len(bike_time_dist_url_list)
   print 'Result:',walkables,bikeables 
-  the_result=''
   if(walkables==0 and bikeables==0):
-    the_result='No walkable or bikeable events near you' 
+    the_result='No walkable or bikeable events matching your criteria' 
+    return render_template("nooutput.html",the_result=the_result)
   else:
 #Sort by nerdiness of group name
     #walk_time_dist_url_list.sort(key=lambda x: x[4],reverse=True)
@@ -198,11 +211,11 @@ def meetup_output():
 
   folium.TileLayer('cartodbdark_matter').add_to(map_osm)
   tmp_rand = random.choice(xrange(1,99999))
-  map_osm.create_map(path='flaskexample/templates/osm-%d.html' % (tmp_rand))
+  map_osm.create_map(path='flaskexample/templates/osm-%s.html' % (tmp_rand))
 
   if(the_result==''):
     #return render_template("output.html", first_name=first_name,sec_name=sec_name,first_url=first_url, sec_url=sec_url,first_dist=first_dist,sec_dist=sec_dist,first_time=first_time,sec_time=sec_time)
     return render_template("output.html", tmp_rand=tmp_rand, walk_stars=walk_stars,bike_stars=bike_stars, walkables=walkables,bikeables=bikeables,walk_urls=walk_urls,bike_urls=bike_urls,walk_names=walk_names,bike_names=bike_names,walk_dists=walk_dists,bike_dists=bike_dists,walk_times=walk_times,bike_times=bike_times)
   else:
-#TODO: Figure out how to return an error page
-    return
+# Should never happen now
+    return render_template("nooutput.html",the_result=the_result)
