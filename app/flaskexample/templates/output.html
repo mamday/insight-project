@@ -63,7 +63,8 @@
 <br><br>
 <center>
 <div class="container">
-    <p>\n</p>
+<br><br>
+    <!--<p>\n</p>-->
     <center><img src="/static/img/nerds.jpg" style="width:200px;height:200px;">
     </center>
     <div class="bg-primary">
@@ -117,10 +118,11 @@
    ================================================== -->
    <!-- Placed at the end of the document so the pages load faster -->
 <!--<div class="container">-->
-<p>\n</p>
+<!--<p>\n</p>-->
+<br><br>
 <!--</div>>--><!-- /.container -->
 <div align="center">
-  {% include 'osm.html' %}
+  {% include 'osm-%s.html' % tmp_rand %}
 </div>
    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
 <script src="static/js/bootstrap.min.js"></script>

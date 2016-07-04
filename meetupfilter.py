@@ -6,21 +6,32 @@ from gensim import corpora, models, similarities
 from gensim.models import word2vec
 from sklearn import decomposition
 
-in_file = sys.argv[1]
-
-
-
 def main():
+  in_file = sys.argv[1]
+  imdb_model = word2vec.Word2Vec.load('/home/mamday/insight-project/300features_40minwords_10context')
   evt_list = []
   space_split_evt_list = []
+  nerd_score = []
+  evt_url = []
   for line in open(in_file).readlines():
     cur_split = line.split(',')
+    if(cur_split[0]=="Event Info"):
+      evt_url.append(cur_split[1])
     if(cur_split[0]=="Event Description"):
       cur_text =  ''.join(cur_split[1:])
       in_text = clean_text(cur_text)
       #print in_text
       evt_list.append(in_text)
       space_split_evt_list.append(in_text.split(' '))
+      cur_score=0
+      for word in (in_text.split(' ')):
+        try:
+          #print word
+          cur_score+=(imdb_model.similarity('nerd',word))     
+          #print 'Added'
+        except:
+          continue
+      nerd_score.append(cur_score/len(in_text.split(' ')))
   if(sys.argv[2]=='lsa'):
     evt_features,evt_vocab = GetVectors(evt_list)
     LSAModels(evt_features,evt_vocab)
@@ -29,13 +40,15 @@ def main():
     NMFModels(evt_features,evt_vocab)
   elif(sys.argv[2]=='w2v'):
     try:
-      w2v_model = word2vec.Word2Vec.load('meetupevents_500features_min20')
+      w2v_model = word2vec.Word2Vec.load('/home/mamday/insight-project/meetupevents_500features_min20')
     except:
       w2v_model = W2VModels(space_split_evt_list)
-    imdb_model = word2vec.Word2Vec.load('300features_40minwords_10context')
     #corpus_list,w2v_list,v_dict = W2VtoCorpus(w2v_model,evt_list)
     #tfidf,tfidf_corpus = TFIDFModels(corpus_list)
-    print w2v_model.most_similar('nerd'),imdb_model.most_similar('nerd') 
+    #print w2v_model.most_similar('nerd'),imdb_model.most_similar('nerd') 
+    for i in xrange(len(evt_url)):
+      #print len(evt_url),len(nerd_score),evt_url[:1],nerd_score[:10] 
+      print i,',',evt_url[i],',',nerd_score[i]
   else:
      pass
 
@@ -44,17 +57,20 @@ def clean_text(c_text,stop_bool=True,stem_bool=False,lem_bool=False):
   re_fit = re.sub("[^a-zA-Z]", " ", c_text).lower()
 #Tokenize
   tok_first = nltk.word_tokenize(re_fit)
+  slt_first=[] 
 #Remove stop words
   if(stop_bool):
     stopwords = nltk.corpus.stopwords.words('english')
     slt_first = set([w for w in tok_first if not w in stopwords])
 #Stem and Lemm
-  if(lem_bool):
+  elif(lem_bool):
     lem = nltk.WordNetLemmatizer()
     slt_first = set([lem.lemmatize(t) for t in slt_first])
-  if(stem_bool):
+  elif(stem_bool):
     mstem = nltk.LancasterStemmer()
     slt_first = set([mstem.stem(t) for t in slt_first])
+  else:
+    slt_first=tok_first
 
   return ' '.join(slt_first)
 
