@@ -6,6 +6,10 @@ from gensim import corpora, models, similarities
 from gensim.models import word2vec
 from sklearn import decomposition
 
+#So, this is the script I used to initially test multiple different models to see exactly what I could use to try and filter my data by nerdiness
+# For topic modeling I used LDA (latent dirichlet allocation), LSI (latent semantic indexing) and NNMF (non-negative matrix factorization). I found that when trained on the Meetup data that none of these methods really worked (all of them found topics like 'meetings' or 'days of the week'
+#I then also tested using the word2vec algorithm, which is what I ultimately ended up using for my project
+
 def main():
   in_file = sys.argv[1]
   imdb_model = word2vec.Word2Vec.load('/home/mamday/insight-project/300features_40minwords_10context')
@@ -32,12 +36,15 @@ def main():
         except:
           continue
       nerd_score.append(cur_score/len(in_text.split(' ')))
+#LSI and LDA
   if(sys.argv[2]=='lsa'):
     evt_features,evt_vocab = GetVectors(evt_list)
     LSAModels(evt_features,evt_vocab)
+#NNMF
   elif(sys.argv[2]=='nmf'):
     evt_features,evt_vocab = GetVectors(evt_list)
     NMFModels(evt_features,evt_vocab)
+#word2vec
   elif(sys.argv[2]=='w2v'):
     try:
       w2v_model = word2vec.Word2Vec.load('/home/mamday/insight-project/meetupevents_500features_min20')
@@ -51,7 +58,7 @@ def main():
       print i,',',evt_url[i],',',nerd_score[i]
   else:
      pass
-
+#Algorithm that tokenizes, stems and lemmatizes words to make it easier to classify them
 def clean_text(c_text,stop_bool=True,stem_bool=False,lem_bool=False):
   import re
   re_fit = re.sub("[^a-zA-Z]", " ", c_text).lower()
@@ -74,6 +81,7 @@ def clean_text(c_text,stop_bool=True,stem_bool=False,lem_bool=False):
 
   return ' '.join(slt_first)
 
+#Create a word2vec model from a corpus
 def W2VModels(evt_list):
 # Set values for various parameters
   num_features = 500 
@@ -93,6 +101,7 @@ def W2VModels(evt_list):
 
   return model
 
+#Create a corpus from word2vec vocabulary
 def W2VtoCorpus(w2v_model,evt_list):
   v_dict = {}
   corpus_list = []
@@ -117,6 +126,7 @@ def W2VtoCorpus(w2v_model,evt_list):
     corpus_list.append(evt_vec)
   return corpus_list,w2v_list,v_dict
 
+#Create a bag of words from a list of text (evt_list)
 def GetVectors(evt_list,max_features=500):
   vectorizer = CountVectorizer(analyzer = "word",   \
                              tokenizer = None,    \
@@ -129,6 +139,7 @@ def GetVectors(evt_list,max_features=500):
   vocab = numpy.array(vocab)
   return in_features,vocab
 
+#Find topics using NNMF
 def NMFModels(in_features,vocab):
   num_topics = 20
   num_top_words = 20
@@ -141,11 +152,13 @@ def NMFModels(in_features,vocab):
   for t in range(len(topic_words)):
         print("Topic {}: {}".format(t, ' '.join(topic_words[t][:15])))
 
+#Try to apply TFIDF to improve word weights and significance of topics
 def TFIDFModels(corpus_list):
   tfidf = models.TfidfModel(corpus_list)
   tfidf_corpus = tfidf[corpus_list]
   return tfidf,tfidf_corpus
 
+#Try to find topics with LSI and LDA
 def LSAModels(in_features,vocab):
   corpus_list = []
   v_dict = {}
