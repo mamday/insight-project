@@ -1,7 +1,4 @@
-
-# coding: utf-8
-
-# In[1]:
+#A bunch of tests to make sure that all the math I need to be able to do on the event tables is possible. Checking for any weirdness that might have been injected into my table by incorrectly handling types etc.
 
 from sqlalchemy import create_engine
 from sqlalchemy_utils import database_exists, create_database
