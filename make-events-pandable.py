@@ -1,8 +1,10 @@
 import sys
 
+#This just takes the (kind of ugly) output from grabbing everything from the Meetup API and just extracts the information I want for different tables in my postgres database (group table, event table, search table)
+
 def main():
   in_file = sys.argv[1]
-#Events
+# Get information to store in Event Table
   if('event' in sys.argv[2]):
     e_list,ss_e_list,info = parse_event_file(in_file)
     if(sys.argv[2]=='eventinfo'):
@@ -16,7 +18,7 @@ def main():
     else:
       print 'Invalid Entry'
 
-#Groups
+# Get information to store in Group Table
   elif(sys.argv[2]=='group'):
     info = parse_group_file(in_file)
     print ','.join(['group_id','group_url','group_name','topic'])
@@ -25,6 +27,7 @@ def main():
   else:
     print 'Invalid Entry'
 
+#Extracts the few entries I actually want from the group data and stores them in a dictionary
 def parse_group_file(in_file):
   info_dict = {'group_url':[],'group_name':[],'topic':[]}
   for line in open(in_file).readlines():
@@ -34,6 +37,7 @@ def parse_group_file(in_file):
     info_dict['topic'].append(cur_split[5]) 
   return info_dict
 
+#Extracts the few entries I actually want from the event data and stores them in a dictionary
 def parse_event_file(in_file):
   evt_list = []
   space_split_evt_list = []
