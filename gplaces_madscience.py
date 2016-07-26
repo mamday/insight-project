@@ -6,9 +6,10 @@ from geopy import *
 
 my_key = open(sys.argv[1]).readlines()[0]
 
+#Turn a place name (ex. "Seattle, Washington") into latitude and longitude
 def LatLongFromText(location):
   geolocator = Nominatim()
-  coded_location = geolocator.geocode("Seattle, Washington")
+  coded_location = geolocator.geocode(location)
   return (coded_location.latitude, coded_location.longitude)
 
 #Grabbing and parsing the JSON data
@@ -41,6 +42,7 @@ def GoogPlace(search,lat,lng,radius,types,key,token=None):
   jsonData = json.loads(jsonRaw)
   return jsonData
 
+#Query information about a place using the location name (loc_text), type of search, search_type (nearbysearch etc), activity type, act_type(food etc.) and token(if a previous search exists, you will get a token that you can use to get to the next page in the search)
 def GetPlace(loc_text,search_type,act_type,token=None):
 #Get location from text name of city
   loc = LatLongFromText(loc_text)
@@ -58,7 +60,7 @@ place = GetPlace("Seattle, Washington",cur_search,act_type)
 #Write out the information
 json.dump(place,open(sys.argv[2],'w'))
 
-#Keep fetching information if it exists
+#Keep fetching information in the search if it exists
 try:
   next_token = place['next_page_token']
   cur_iter+=1
