@@ -9,6 +9,7 @@ import sys
 UTF8Writer = codecs.getwriter('utf8')
 sys.stdout = UTF8Writer(sys.stdout)
 
+#This is how I got events and group information from the Meetup API. Originally based on a tutorial (which I listed in the first commit for this project).
 
 def main():
         api_key= open(sys.argv[1]).readlines()[0] 
@@ -25,7 +26,7 @@ def main():
             count+=1
           time.sleep(1)
         print 'Matching Groups,',count
-
+#Get group information for a list of cities
 def get_groups(api_key):
         cities =[("Seattle","WA"),("Bellevue","WA"),("Redmond","WA")]
         #cities =[("Seattle","WA")]
@@ -64,6 +65,7 @@ def get_groups(api_key):
                     print 'Group Description,',gdesc
             time.sleep(1)
 
+#Get event information for an url I got from the group information 
 def event_from_url(api_key,glink,counted=False):
   try:
     e_response=get_results({'group_urlname':glink,'key':api_key},res='events')
@@ -89,7 +91,7 @@ def event_from_url(api_key,glink,counted=False):
   return counted
 
 
-
+#Query the Meetup API either for groups (res='groups') or events(res='events')
 def get_results(params,res='groups'):
         ma_url = 'http://api.meetup.com/2/%s?' % (res)
         count=0
